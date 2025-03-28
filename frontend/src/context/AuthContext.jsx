@@ -8,76 +8,91 @@ export const AuthProvider = ({ children }) => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    try {
-      const storedUser = localStorage.getItem("user");
-      if (storedUser) {
+    const storedUser = localStorage.getItem("user");
+    if (storedUser) {
+      try {
         setUser(JSON.parse(storedUser));
+      } catch (error) {
+        console.error("Error parsing stored user:", error);
+        localStorage.removeItem("user");
       }
-    } catch (error) {
-      console.error("Error loading user from localStorage:", error);
     }
   }, []);
 
-  const login = async (email, password) => {
+  const handleApiCall = async (url, method, body) => {
     try {
-      console.log("Attempting login...");
-      const response = await fetch("http://localhost:5000/api/login", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password }),
+      console.log(`Attempting ${method} request to ${url}`);
+      console.log('Request Body:', body);
+
+      const response = await fetch(url, {
+        method,
+        headers: { 
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(body),
       });
 
-      const data = await response.json();
-      console.log("Login response received:", data);
+      console.log('Full Response:', response);
+      console.log('Response Status:', response.status);
+      
+      const data = await response.text();
+      console.log('Raw Response Data:', data);
 
-      if (!response.ok) {
-        throw new Error(data.message || "Login failed!");
+      let parsedData;
+      try {
+        parsedData = JSON.parse(data);
+      } catch (parseError) {
+        console.error('Failed to parse response:', parseError);
+        throw new Error('Invalid server response');
       }
 
+      if (!response.ok) {
+        throw new Error(parsedData.message || "Operation failed");
+      }
+
+      return parsedData;
+    } catch (error) {
+      console.error(`Detailed Error in ${method} request:`, error);
+      throw error;
+    }
+  };
+
+  const login = async (email, password) => {
+    try {
+      const data = await handleApiCall(
+        "http://localhost:5000/api/login", 
+        "POST", 
+        { email, password }
+      );
+
       setUser(data.user);
-      localStorage.setItem("token", data.token);
       localStorage.setItem("user", JSON.stringify(data.user));
-
-      console.log("User set in state:", data.user);
-      console.log("User saved in localStorage:", localStorage.getItem("user"));
-
-      // Redirect based on user role
       navigate(data.user.isOrganizer ? "/admin" : "/home");
     } catch (error) {
-      console.error("Login failed:", error.message);
-      alert(error.message || "Invalid credentials!");
+      console.error("Login Error:", error);
+      alert(error.message || "Login failed");
     }
   };
 
   const register = async (formData) => {
     try {
-      const response = await fetch("http://localhost:5000/api/register", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(formData),
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.message || "Registration failed!");
-      }
+      const data = await handleApiCall(
+        "http://localhost:5000/api/register", 
+        "POST", 
+        formData
+      );
 
       setUser(data.user);
-      localStorage.setItem("token", data.token);
       localStorage.setItem("user", JSON.stringify(data.user));
-      
-      // Redirect based on user role after registration
       navigate(data.user.isOrganizer ? "/admin" : "/home");
     } catch (error) {
-      console.error("Registration failed:", error.message);
-      alert(error.message || "Something went wrong!");
+      console.error("Registration Error:", error);
+      alert(error.message || "Registration failed");
     }
   };
-  
+
   const logout = () => {
     localStorage.removeItem("user");
-    localStorage.removeItem("token");
     setUser(null);
     navigate("/");
   };
