@@ -86,7 +86,7 @@ const EventDetailPage = () => {
     }
 
     try {
-      await axios.post(`http://localhost:5000/api/events/${id}/cancel`, {
+      await axios.post(`https://evento-kv9i.onrender.com/api/events/${id}/cancel`, {
         userId: user._id
       });
 
@@ -115,7 +115,7 @@ const EventDetailPage = () => {
         <div className="relative h-64">
           {event?.poster && (
             <img
-              src={`http://localhost:5173/${event.poster}`}
+              src={`https://evento-kv9i.onrender.com:5173/${event.poster}`}
               alt={event.title}
               className="w-full h-full object-cover"
             />

@@ -82,7 +82,7 @@ const AdminPage = () => {
         console.log(`${key}: ${value}`);
       }
 
-      const response = await axios.post("http://localhost:5000/api/events", formData, {
+      const response = await axios.post("https://evento-kv9i.onrender.com/api/events", formData, {
         headers: {
           'Content-Type': 'multipart/form-data'
         }
@@ -238,7 +238,7 @@ const AdminPage = () => {
       }
 
       // Send validation request to backend
-      const response = await axios.post("http://localhost:5000/api/validate-entry", {
+      const response = await axios.post("https://evento-kv9i.onrender.com/api/validate-entry", {
         eventID: selectedEventId,
         userID: qrData.userId
       });
