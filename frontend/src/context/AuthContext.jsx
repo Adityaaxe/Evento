@@ -60,7 +60,7 @@ export const AuthProvider = ({ children }) => {
   const login = async (email, password) => {
     try {
       const data = await handleApiCall(
-        "http://localhost:5000/api/login", 
+        "https://evento-kv9i.onrender.com/api/login", 
         "POST", 
         { email, password }
       );
@@ -77,7 +77,7 @@ export const AuthProvider = ({ children }) => {
   const register = async (formData) => {
     try {
       const data = await handleApiCall(
-        "http://localhost:5000/api/register", 
+        "https://evento-kv9i.onrender.com/api/register", 
         "POST", 
         formData
       );
