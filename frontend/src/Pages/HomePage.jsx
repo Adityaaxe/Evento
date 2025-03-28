@@ -16,7 +16,7 @@ const HomePage = () => {
   const fetchEvents = async () => {
     try {
       setLoading(true);
-      const response = await axios.get("http://localhost:5000/api/events");
+      const response = await axios.get("https://evento-kv9i.onrender.com/api/events");
       setEvents(response.data);
       setError("");
     } catch (error) {

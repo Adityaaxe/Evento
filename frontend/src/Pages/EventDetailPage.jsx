@@ -26,7 +26,7 @@ const EventDetailPage = () => {
     const fetchEventDetails = async () => {
       try {
         setLoading(true);
-        const response = await axios.get(`http://localhost:5000/api/events/${id}`);
+        const response = await axios.get(`https://evento-kv9i.onrender.com/api/events/${id}`);
         setEvent(response.data);
 
         const currentUser = getCurrentUser();
@@ -55,7 +55,7 @@ const EventDetailPage = () => {
     setRegistering(true);
 
     try {
-      const response = await axios.post(`http://localhost:5000/api/events/${id}/register`, {
+      const response = await axios.post(`https://evento-kv9i.onrender.com/api/events/${id}/register`, {
         userId: user._id,
         userName: user.name,
         eventId: id,

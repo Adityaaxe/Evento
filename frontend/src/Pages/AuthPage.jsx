@@ -1,6 +1,7 @@
 import React, { useState, useContext } from "react";
 import { AuthContext } from "../context/AuthContext";
 import { useNavigate } from "react-router-dom";
+import PageSetup from "../components/PageSetup";
 
 const AuthPage = () => {
   const [isLogin, setIsLogin] = useState(true);
@@ -44,6 +45,7 @@ const AuthPage = () => {
   };
 
   return (
+    <PageSetup>
     <div className="flex h-screen items-center justify-center bg-gradient-to-b from-gray-900 to-black text-white">
       <div className="w-full max-w-md bg-white/5 p-8 rounded-3xl text-center shadow-lg backdrop-blur-xl">
         <h2 className="text-3xl font-bold mb-4">
@@ -116,6 +118,7 @@ const AuthPage = () => {
         </p>
       </div>
     </div>
+    </PageSetup>
   );
 };
 
