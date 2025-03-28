@@ -10,12 +10,6 @@ const dbURL = "mongodb+srv://krishanmanics19:a7UAMlWB0tVHwScx@cluster0.rkqs6.mon
 
 // Comprehensive CORS configuration
 const corsOptions = {
-  origin: [
-    'http://localhost:3000',   // React default
-    'http://localhost:5173',   // Vite default
-    'http://127.0.0.1:3000',   
-    'http://127.0.0.1:5173'    
-  ],
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: [
     'Content-Type', 
