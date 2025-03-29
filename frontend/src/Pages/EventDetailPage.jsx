@@ -116,14 +116,12 @@ const EventDetailPage = () => {
       <div className="max-w-4xl mx-auto bg-white rounded-lg shadow-md overflow-hidden">
         <div className="relative h-64">
           {event?.poster && (() => {
-            let posterUrl = event.poster;
+            let posterUrl = event.poster || "";
 
-            // Check if "/event/" exists in the URL and remove it
-            if (posterUrl.includes("/event/")) {
-              posterUrl = posterUrl.replace("/event/", "/");
-            }
+            // Ensure posterUrl is a string and replace "/event/" if it exists
+            posterUrl = posterUrl.replace("/event/", "/");
 
-            console.log("Modified Poster URL:", posterUrl); // Debugging
+            console.log("Modified Poster URL:", posterUrl); // Debugging in console
 
             return (
               <img
