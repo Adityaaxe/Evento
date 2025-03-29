@@ -115,7 +115,7 @@ const EventDetailPage = () => {
         <div className="relative h-64">
           {event?.poster && (
             <img
-              src={`${event.poster}`.replace("event/", "/")}
+              src={event.poster.includes("/event/") ? event.poster.replace("/event/", "/") : event.poster}
               alt={event.title}
               className="w-full h-full object-cover"
             />
