@@ -115,7 +115,7 @@ const EventDetailPage = () => {
         <div className="relative h-64">
           {event?.poster && (
             <img
-              src={`https://evento-git-main-aditya-pratap-singhs-projects-6f7feefa.vercel.app/${event.poster}`}
+              src={`${event.poster}`}
               alt={event.title}
               className="w-full h-full object-cover"
             />
