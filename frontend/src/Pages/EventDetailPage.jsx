@@ -109,28 +109,17 @@ const EventDetailPage = () => {
     }
   };
 
-
-
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-900 p-6">
       <div className="max-w-4xl mx-auto bg-white rounded-lg shadow-md overflow-hidden">
         <div className="relative h-64">
-          {event?.poster && (() => {
-            let posterUrl = event.poster || "";
-
-            // Ensure posterUrl is a string and replace "/event/" if it exists
-            posterUrl = posterUrl.replace("/event/", "/");
-
-            console.log("Modified Poster URL:", posterUrl); // Debugging in console
-
-            return (
-              <img
-                src={posterUrl}
-                alt={event.title}
-                className="w-full h-full object-cover"
-              />
-            );
-          })()}
+          {event?.poster && (
+            <img
+              src={`https://evento-git-main-aditya-pratap-singhs-projects-6f7feefa.vercel.app/${event.poster}`}
+              alt={event.title}
+              className="w-full h-full object-cover"
+            />
+          )}
         </div>
         <div className="p-6 md:p-8">
           <div className="mb-6">
