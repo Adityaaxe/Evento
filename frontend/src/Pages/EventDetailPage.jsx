@@ -109,17 +109,30 @@ const EventDetailPage = () => {
     }
   };
 
+
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-900 p-6">
       <div className="max-w-4xl mx-auto bg-white rounded-lg shadow-md overflow-hidden">
         <div className="relative h-64">
-          {event?.poster && (
-            <img
-              src={event.poster.includes("/event/") ? event.poster.replace("/event/", "/") : event.poster}
-              alt={event.title}
-              className="w-full h-full object-cover"
-            />
-          )}
+          {event?.poster && (() => {
+            let posterUrl = event.poster;
+
+            // Check if "/event/" exists in the URL and remove it
+            if (posterUrl.includes("/event/")) {
+              posterUrl = posterUrl.replace("/event/", "/");
+            }
+
+            console.log("Modified Poster URL:", posterUrl); // Debugging
+
+            return (
+              <img
+                src={posterUrl}
+                alt={event.title}
+                className="w-full h-full object-cover"
+              />
+            );
+          })()}
         </div>
         <div className="p-6 md:p-8">
           <div className="mb-6">
