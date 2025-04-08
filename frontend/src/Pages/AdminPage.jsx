@@ -43,6 +43,7 @@ const AdminPage = () => {
       console.error("Error fetching events", error);
     }
   };
+  console.log(events)
 
   const handleChange = (e) => {
     if (e.target.name === "poster") {
@@ -111,39 +112,34 @@ const AdminPage = () => {
       });
 
       const videoElement = document.getElementById("camera-feed");
-      if (videoElement) {
-        videoElement.srcObject = stream;
-        setStream(stream);
-        
-        videoElement.onloadedmetadata = () => {
-          videoElement.play();
-          startScanning();
-        };
-      }
+      videoElement.srcObject = mediaStream;
 
-      // After 30 seconds, show verification popup
-      setTimeout(() => {
-        setShowVerificationPopup(true);
-        setValidationStatus('success');
-        
-        // Close everything after 2 seconds
-        setTimeout(() => {
-          closeCamera();
-          setShowVerificationPopup(false);
-          setValidationStatus(null);
-        }, 2000);
-      }, 8000);
+      // Start scanning only after video is playing
+      videoElement.onplaying = () => {
+        console.log("Video is playing - starting scan");
+        scanQRCode();
+      };
+
+      // Reset states
+      setQrResult("");
+      setParsedQrData(null);
+      setValidationStatus(null);
+      setValidationMessage("");
 
     } catch (error) {
       console.error("Camera access error:", error);
       setScanningStatus('Failed to access camera');
     }
   };
-  
 
-  const startScanning = () => {
-    setScanningStatus("Scanning for QR code...");
+  const closeCamera = () => {
+    if (stream) {
+      stream.getTracks().forEach((track) => track.stop());
+    }
+    setCameraActive(false);
+  };
 
+  const scanQRCode = () => {
     const videoElement = document.getElementById("camera-feed");
     const canvas = document.createElement("canvas");
     const ctx = canvas.getContext("2d", { willReadFrequently: true });
@@ -151,91 +147,76 @@ const AdminPage = () => {
     let isScanning = true;
 
     const scanFrame = () => {
-      if (!isScanning || !videoElement || !ctx) return;
-    
-      if (videoElement.readyState === videoElement.HAVE_ENOUGH_DATA) {
-        // Match canvas size to video size
-        const width = videoElement.videoWidth;
-        const height = videoElement.videoHeight;
-        canvas.width = width;
-        canvas.height = height;
-        
-        // Draw the video frame to canvas
-        ctx.drawImage(videoElement, 0, 0, width, height);
+      if (!scanning || !cameraActive) return;
 
-        try {
-          const imageData = ctx.getImageData(0, 0, width, height);
-          
-          if (!imageData || !imageData.data) {
-            console.error("Failed to retrieve image data.");
-            return;
+      try {
+        // Set canvas dimensions to match video
+        canvas.width = videoElement.videoWidth;
+        canvas.height = videoElement.videoHeight;
+
+        // Draw video frame to canvas
+        ctx.drawImage(videoElement, 0, 0, canvas.width, canvas.height);
+
+        // Get image data for jsQR
+        const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+        const code = jsQR(imageData.data, imageData.width, imageData.height, {
+          inversionAttempts: "dontInvert",
+        });
+
+        if (code) {
+          console.log("QR Code detected:", code.data);
+          setQrResult(code.data);
+          scanning = false; // Stop scanning
+
+          try {
+            const parsedData = JSON.parse(code.data);
+            setParsedQrData(parsedData);
+            validateQrCode(parsedData);
+          } catch (e) {
+            setValidationStatus("error");
+            setValidationMessage("Invalid QR format");
           }
 
-          const code = jsQR(imageData.data, width, height, {
-            inversionAttempts: "attemptBoth", // Try both normal and inverted scanning
-          });
-
-          if (code) {
-            console.log("QR Code detected:", code.data);
-            try {
-              const parsedData = JSON.parse(code.data);
-              isScanning = false;
-              validateQrCode(parsedData);
-              return;
-            } catch (parseError) {
-              console.error("Failed to parse QR code data:", parseError);
-            }
-          }
-        } catch (error) {
-          console.error("QR scanning error:", error);
+          closeCamera();
+          return;
         }
-      }
-    
-      if (isScanning) {
+
+        // Continue scanning
         requestAnimationFrame(scanFrame);
       }
     };
-    
+
+    // Start the scan loop
     scanFrame();
   };
 
   const validateQrCode = async (qrData) => {
     try {
-      setScanningStatus("Validating ticket...");
-  
-      const response = await axios.post("http://localhost:5000/api/validate-entry", {
+      // Check if we have the necessary data
+      if (!qrData.userId || !selectedEventId) {
+        setValidationStatus("error");
+        setValidationMessage("Invalid QR code data");
+        return;
+      }
+
+      // Send validation request to backend
+      const response = await axios.post("https://evento-kv9i.onrender.com/api/validate-entry", {
         eventID: selectedEventId,
         userID: qrData.userId
       });
-  
-      setScanningStatus(response.data.message);
-      
-      setTimeout(() => {
-        closeCamera();
-      }, 3000);
-    } catch (error) {
-      console.error("Validation error:", error);
-      setScanningStatus("Validation failed. Please try again.");
-      
-      setTimeout(() => {
-        closeCamera();
-      }, 3000);
-    }
-  };
 
-  const closeCamera = () => {
-    if (stream) {
-      stream.getTracks().forEach(track => track.stop());
-      setStream(null);
+      // Update validation status based on response
+      setValidationStatus(response.data.success ? "success" : "error");
+      setValidationMessage(response.data.message);
+
+      // If successful, you might want to update the UI or do something else
+      console.log("Validation response:", response.data);
+
+    } catch (error) {
+      console.error("Error validating QR code:", error);
+      setValidationStatus("error");
+      setValidationMessage("Error validating ticket");
     }
-    
-    const videoElement = document.getElementById("camera-feed");
-    if (videoElement) {
-      videoElement.srcObject = null;
-    }
-    
-    setCameraActive(false);
-    setScanningStatus('');
   };
 
   useEffect(() => {
@@ -330,29 +311,36 @@ const AdminPage = () => {
       {/* Right Side: Event List */}
       <div className="w-2/3 p-4 overflow-y-auto">
         <h2 className="text-xl font-bold text-white mb-4">Your Hosted Events</h2>
-        <div className="space-y-3 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {events.length > 0 ? (
             events.map((event) => (
-              <div key={event._id} className="p-4 bg-white rounded-lg shadow-md">
+              <div
+                key={event._id}
+                className="bg-white rounded-lg shadow-md p-4 h-full flex flex-col"
+              >
                 {event.poster && (
                   <img
                     src={`${event.poster}`}
                     alt={`Poster for ${event.title}`}
-                    className="w-full h-48 object-cover rounded-lg mb-4"
+                    className="w-full h-56 object-cover rounded-lg mb-4"
+                    referrerPolicy="no-referrer"
                   />
                 )}
                 <h3 className="text-lg font-bold">{event.title}</h3>
-                <p>{event.description}</p>
-                <p className="text-sm text-gray-600">📅 {new Date(event.date).toDateString()}</p>
-                <p className="text-sm text-gray-600">🕒 {event.time}</p>
-                <p className="text-sm text-gray-600">📍 {event.location}</p>
-                <p className="text-sm text-gray-600">
-                  📅 Registration Deadline: {new Date(event.registrationDeadline).toDateString()}
-                </p>
-                <p className="text-sm text-gray-600">
-                  👥 {event.participants ? event.participants.length : 0} Registrations
-                </p>
-                <button onClick={() => openCamera(event._id)} className="mt-2 w-full p-2 bg-green-600 text-white rounded">Scan</button>
+                <p className="text-sm text-gray-700 flex-grow">{event.description}</p>
+                <div className="text-sm text-gray-600 mt-2">
+                  <p>📅 {new Date(event.date).toDateString()}</p>
+                  <p>🕒 {event.time}</p>
+                  <p>📍 {event.location}</p>
+                  <p>📅 Registration Deadline: {new Date(event.registrationDeadline).toDateString()}</p>
+                  <p>👥 {event.participants ? event.participants.length : 0} Registrations</p>
+                </div>
+                <button
+                  onClick={() => openCamera(event._id)}
+                  className="mt-auto w-full p-2 bg-green-600 text-white rounded hover:bg-green-700 transition"
+                >
+                  Scan
+                </button>
               </div>
             ))
           ) : (
@@ -378,36 +366,27 @@ const AdminPage = () => {
 
       {/* Camera Modal */}
       {cameraActive && (
-        <div 
-          className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-40"
-          onClick={(e) => e.target === e.currentTarget && closeCamera()}
-        >
-          <div className="relative bg-white p-4 rounded-lg shadow-lg w-full max-w-2xl">
-            <div className="relative aspect-video bg-black">
-              <video
-                id="camera-feed"
-                className="absolute inset-0 w-full h-full object-contain"
-                playsInline
-                autoPlay
-                muted
-              ></video>
-              <div className="absolute top-0 left-0 right-0 p-2 bg-black bg-opacity-50 text-white text-center">
-                {scanningStatus}
-              </div>
-              <div className="absolute inset-0 border-2 border-white opacity-50 m-12"></div>
-            </div>
-            <div className="mt-4 flex justify-center">
-              <button
-                onClick={(e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  closeCamera();
-                }}
-                className="px-6 py-2 bg-red-600 text-white rounded hover:bg-red-700 transition-colors"
-              >
-                Cancel Scanning
-              </button>
-            </div>
+        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-75">
+          <div className="bg-white p-4 rounded-lg relative">
+            {/* Add a border to help with scanning */}
+            <div className="absolute inset-0 border-4 border-green-500 m-8 pointer-events-none"></div>
+
+            <video
+              id="camera-feed"
+              autoPlay
+              playsInline
+              muted
+              className="w-full h-auto max-h-[70vh]"
+            ></video>
+
+            <p className="text-center my-2">Align QR code within the frame</p>
+
+            <button
+              onClick={closeCamera}
+              className="mt-2 w-full p-2 bg-red-600 text-white rounded"
+            >
+              Close Camera
+            </button>
           </div>
         </div>
       )}
