@@ -185,7 +185,6 @@ const AdminPage = () => {
         requestAnimationFrame(scanFrame);
       }
     };
-
     // Start the scan loop
     scanFrame();
   };
