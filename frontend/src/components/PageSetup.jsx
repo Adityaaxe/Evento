@@ -24,7 +24,7 @@ const PageSetup = ({ children }) => {
           alt='Rotating Glowing Icon'
         />
       </div>
-      <div className='absolute top-30 right-20 animate-bounce z-50 z-0'>
+      <div className='absolute top-30 right-20 animate-bounce z-8 z-0'>
         <img
           src='/assets/trianglearrow.png'
           className='glowing-icon'

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { Link } from "react-router-dom";
+import PageSetup from "../components/PageSetup";
 
 const HomePage = () => {
   const [events, setEvents] = useState([]);
@@ -59,6 +60,7 @@ const HomePage = () => {
   };
 
   return (
+    <PageSetup>
     <div className="min-h-screen bg-gradient-to-b from-gray-900 p-6">
       <div className="max-w-6xl mx-auto">
         {/* Header */}
@@ -66,7 +68,7 @@ const HomePage = () => {
           <h1 className="text-3xl font-bold text-center text-white mb-6">Events</h1>
           
           {/* Search and Filter Controls */}
-          <div className="bg-white p-4 rounded-lg shadow-md mb-6">
+          <div className="bg-white p-4 rounded-lg shadow-md mb-6 z-50">
             <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
               <div className="relative flex-grow">
                 <input
@@ -143,7 +145,7 @@ const HomePage = () => {
                 )}
               
               {/* Event Details */}
-              <div className="p-4">
+              <div className="p-4 z-9">
                 <h3 className="text-xl font-bold mb-2">{event.title}</h3>
                 <p className="text-gray-600 mb-4 line-clamp-3">{event.description}</p>
                 
@@ -206,6 +208,7 @@ const HomePage = () => {
         </div>
       </div>
     </div>
+    </PageSetup>
   );
 };
 

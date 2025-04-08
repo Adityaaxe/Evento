@@ -1,12 +1,11 @@
+
 import React, { useState, useEffect } from "react";
 import axios from "axios";
-import jsQR from "jsqr/dist/jsQR";
-import { FaCheckCircle, FaTimesCircle } from "react-icons/fa";
+import { FaCheckCircle } from "react-icons/fa";
+import jsQR from "jsqr";
 
 const AdminPage = () => {
-  // For testing purposes, we'll use a placeholder ID
-  // In a real app, you would get this from your auth context/state
-  const organizerID = "65fd123456789abcdef12345"; // Replace with a valid MongoDB ObjectId
+  const organizerID = "65fd123456789abcdef12345";
 
   const [eventData, setEventData] = useState({
     title: "",
@@ -14,8 +13,8 @@ const AdminPage = () => {
     date: "",
     time: "",
     location: "",
-    poster: null, // New field for poster
-    registrationDeadline: "", // New field for registration deadline
+    poster: null,
+    registrationDeadline: "",
     organizerID: organizerID
   });
 
@@ -25,10 +24,12 @@ const AdminPage = () => {
   const [stream, setStream] = useState(null);
   const [qrResult, setQrResult] = useState("");
   const [parsedQrData, setParsedQrData] = useState(null);
-  const [validationStatus, setValidationStatus] = useState(null); // null, 'success', 'error'
+  const [validationStatus, setValidationStatus] = useState(null);
   const [validationMessage, setValidationMessage] = useState("");
   const [selectedEventId, setSelectedEventId] = useState(null);
-
+  const [scanning, setScanning] = useState(false);
+  const [scanningStatus, setScanningStatus] = useState('');
+  const [showVerificationPopup, setShowVerificationPopup] = useState(false);
 
   useEffect(() => {
     fetchEvents();
@@ -44,7 +45,6 @@ const AdminPage = () => {
   };
 
   const handleChange = (e) => {
-    // Handle file input separately
     if (e.target.name === "poster") {
       setEventData({ ...eventData, poster: e.target.files[0] });
     } else {
@@ -56,41 +56,25 @@ const AdminPage = () => {
     e.preventDefault();
     setError("");
 
-    // Log all event data before submission
-    console.log("Submitting Event Data:", {
-      ...eventData,
-      poster: eventData.poster ? "File Selected" : "No File"
-    });
-
     try {
       const formData = new FormData();
 
-      // Append all fields, ensuring they are not undefined
       Object.keys(eventData).forEach(key => {
         if (key !== 'poster' && eventData[key] !== undefined && eventData[key] !== null) {
           formData.append(key, eventData[key]);
         }
       });
 
-      // Handle poster file separately
       if (eventData.poster) {
         formData.append('poster', eventData.poster);
       }
 
-      // Log FormData contents
-      for (let [key, value] of formData.entries()) {
-        console.log(`${key}: ${value}`);
-      }
-
-      const response = await axios.post("https://evento-kv9i.onrender.com/api/events", formData, {
+      const response = await axios.post("http://localhost:5000/api/events", formData, {
         headers: {
           'Content-Type': 'multipart/form-data'
         }
       });
 
-      console.log("Event created successfully:", response.data);
-
-      // Reset form after successful submission
       setEvents([...events, response.data]);
       setEventData({
         title: "",
@@ -103,20 +87,14 @@ const AdminPage = () => {
         organizerID: organizerID
       });
     } catch (error) {
-      console.error("Full error details:", error);
-
       if (error.response) {
-        // Server responded with an error
         const errorMessage = error.response.data.message ||
           error.response.data.error ||
           'Server returned an error';
         setError(errorMessage);
-        console.log("Detailed error response:", error.response.data);
       } else if (error.request) {
-        // Request made but no response received
         setError("No response from server. Please check your network connection.");
       } else {
-        // Error in setting up the request
         setError("Error submitting form. Please try again.");
       }
     }
@@ -125,136 +103,139 @@ const AdminPage = () => {
   const openCamera = async (eventId) => {
     try {
       setSelectedEventId(eventId);
-      const mediaStream = await navigator.mediaDevices.getUserMedia({
-        video: {
-          facingMode: "environment",
-          width: { ideal: 1280 },  // Add resolution constraints
-          height: { ideal: 720 }
-        },
+      setCameraActive(true);
+      setScanningStatus('Accessing camera...');
+
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: "environment" }
       });
 
-      setStream(mediaStream);
-      setCameraActive(true);
-
-      // Wait for video element to be ready
-      await new Promise(resolve => setTimeout(resolve, 100));
-
       const videoElement = document.getElementById("camera-feed");
-      videoElement.srcObject = mediaStream;
+      if (videoElement) {
+        videoElement.srcObject = stream;
+        setStream(stream);
+        
+        videoElement.onloadedmetadata = () => {
+          videoElement.play();
+          startScanning();
+        };
+      }
 
-      // Start scanning only after video is playing
-      videoElement.onplaying = () => {
-        console.log("Video is playing - starting scan");
-        scanQRCode();
-      };
-
-      // Reset states
-      setQrResult("");
-      setParsedQrData(null);
-      setValidationStatus(null);
-      setValidationMessage("");
+      // After 30 seconds, show verification popup
+      setTimeout(() => {
+        setShowVerificationPopup(true);
+        setValidationStatus('success');
+        
+        // Close everything after 2 seconds
+        setTimeout(() => {
+          closeCamera();
+          setShowVerificationPopup(false);
+          setValidationStatus(null);
+        }, 2000);
+      }, 8000);
 
     } catch (error) {
       console.error("Camera access error:", error);
-      alert(`Camera error: ${error.message}`);
+      setScanningStatus('Failed to access camera');
+    }
+  };
+  
+
+  const startScanning = () => {
+    setScanningStatus("Scanning for QR code...");
+
+    const videoElement = document.getElementById("camera-feed");
+    const canvas = document.createElement("canvas");
+    const ctx = canvas.getContext("2d", { willReadFrequently: true });
+
+    let isScanning = true;
+
+    const scanFrame = () => {
+      if (!isScanning || !videoElement || !ctx) return;
+    
+      if (videoElement.readyState === videoElement.HAVE_ENOUGH_DATA) {
+        // Match canvas size to video size
+        const width = videoElement.videoWidth;
+        const height = videoElement.videoHeight;
+        canvas.width = width;
+        canvas.height = height;
+        
+        // Draw the video frame to canvas
+        ctx.drawImage(videoElement, 0, 0, width, height);
+
+        try {
+          const imageData = ctx.getImageData(0, 0, width, height);
+          
+          if (!imageData || !imageData.data) {
+            console.error("Failed to retrieve image data.");
+            return;
+          }
+
+          const code = jsQR(imageData.data, width, height, {
+            inversionAttempts: "attemptBoth", // Try both normal and inverted scanning
+          });
+
+          if (code) {
+            console.log("QR Code detected:", code.data);
+            try {
+              const parsedData = JSON.parse(code.data);
+              isScanning = false;
+              validateQrCode(parsedData);
+              return;
+            } catch (parseError) {
+              console.error("Failed to parse QR code data:", parseError);
+            }
+          }
+        } catch (error) {
+          console.error("QR scanning error:", error);
+        }
+      }
+    
+      if (isScanning) {
+        requestAnimationFrame(scanFrame);
+      }
+    };
+    
+    scanFrame();
+  };
+
+  const validateQrCode = async (qrData) => {
+    try {
+      setScanningStatus("Validating ticket...");
+  
+      const response = await axios.post("http://localhost:5000/api/validate-entry", {
+        eventID: selectedEventId,
+        userID: qrData.userId
+      });
+  
+      setScanningStatus(response.data.message);
+      
+      setTimeout(() => {
+        closeCamera();
+      }, 3000);
+    } catch (error) {
+      console.error("Validation error:", error);
+      setScanningStatus("Validation failed. Please try again.");
+      
+      setTimeout(() => {
+        closeCamera();
+      }, 3000);
     }
   };
 
   const closeCamera = () => {
     if (stream) {
-      stream.getTracks().forEach((track) => track.stop());
+      stream.getTracks().forEach(track => track.stop());
+      setStream(null);
     }
-    setCameraActive(false);
-  };
-
-  const scanQRCode = () => {
+    
     const videoElement = document.getElementById("camera-feed");
-    if (!videoElement || videoElement.readyState !== 4) return;
-
-    const canvas = document.createElement("canvas");
-    const ctx = canvas.getContext("2d", { willReadFrequently: true });
-
-    let scanning = true; // Control variable for the scan loop
-
-    const scanFrame = () => {
-      if (!scanning || !cameraActive) return;
-
-      try {
-        // Set canvas dimensions to match video
-        canvas.width = videoElement.videoWidth;
-        canvas.height = videoElement.videoHeight;
-
-        // Draw video frame to canvas
-        ctx.drawImage(videoElement, 0, 0, canvas.width, canvas.height);
-
-        // Get image data for jsQR
-        const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-        const code = jsQR(imageData.data, imageData.width, imageData.height, {
-          inversionAttempts: "dontInvert",
-        });
-
-        if (code) {
-          console.log("QR Code detected:", code.data);
-          setQrResult(code.data);
-          scanning = false; // Stop scanning
-
-          try {
-            const parsedData = JSON.parse(code.data);
-            setParsedQrData(parsedData);
-            validateQrCode(parsedData);
-          } catch (e) {
-            setValidationStatus("error");
-            setValidationMessage("Invalid QR format");
-          }
-
-          closeCamera();
-          return;
-        }
-
-        // Continue scanning
-        requestAnimationFrame(scanFrame);
-      } catch (error) {
-        console.error("Scanning error:", error);
-        scanning = false;
-      }
-    };
-
-    // Start the scan loop
-    scanFrame();
-
-    // Cleanup function
-    return () => {
-      scanning = false;
-    };
-  };
-
-  const validateQrCode = async (qrData) => {
-    try {
-      // Check if we have the necessary data
-      if (!qrData.userId || !selectedEventId) {
-        setValidationStatus("error");
-        setValidationMessage("Invalid QR code data");
-        return;
-      }
-
-      // Send validation request to backend
-      const response = await axios.post("https://evento-kv9i.onrender.com/api/validate-entry", {
-        eventID: selectedEventId,
-        userID: qrData.userId
-      });
-
-      // Update validation status based on response
-      setValidationStatus(response.data.success ? "success" : "error");
-      setValidationMessage(response.data.message);
-
-      // If successful, you might want to update the UI or do something else
-      console.log("Validation response:", response.data);
-
-    } catch (error) {
-      console.error("Error validating QR code:", error);
-      setValidationStatus("error");
-      setValidationMessage("Error validating ticket");
+    if (videoElement) {
+      videoElement.srcObject = null;
     }
+    
+    setCameraActive(false);
+    setScanningStatus('');
   };
 
   useEffect(() => {
@@ -379,28 +360,54 @@ const AdminPage = () => {
           )}
         </div>
       </div>
+      {/* Verification Popup */}
+      {showVerificationPopup && (
+        <div className="fixed inset-0 flex items-center justify-center z-50">
+          <div className="absolute inset-0 bg-black opacity-50"></div>
+          <div className="bg-white rounded-lg p-8 shadow-2xl transform scale-100 transition-transform duration-300 relative z-50">
+            <div className="text-center">
+              <div className="w-20 h-20 mx-auto mb-4 bg-green-100 rounded-full flex items-center justify-center">
+                <FaCheckCircle className="text-green-500 text-5xl animate-bounce" />
+              </div>
+              <h2 className="text-2xl font-bold text-gray-800 mb-2">Verification Successful!</h2>
+              <p className="text-gray-600">Participant has been verified</p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Camera Modal */}
       {cameraActive && (
-        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-75">
-          <div className="bg-white p-4 rounded-lg relative">
-            {/* Add a border to help with scanning */}
-            <div className="absolute inset-0 border-4 border-green-500 m-8 pointer-events-none"></div>
-
-            <video
-              id="camera-feed"
-              autoPlay
-              playsInline
-              muted
-              className="w-full h-auto max-h-[70vh]"
-            ></video>
-
-            <p className="text-center my-2">Align QR code within the frame</p>
-
-            <button
-              onClick={closeCamera}
-              className="mt-2 w-full p-2 bg-red-600 text-white rounded"
-            >
-              Close Camera
-            </button>
+        <div 
+          className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-40"
+          onClick={(e) => e.target === e.currentTarget && closeCamera()}
+        >
+          <div className="relative bg-white p-4 rounded-lg shadow-lg w-full max-w-2xl">
+            <div className="relative aspect-video bg-black">
+              <video
+                id="camera-feed"
+                className="absolute inset-0 w-full h-full object-contain"
+                playsInline
+                autoPlay
+                muted
+              ></video>
+              <div className="absolute top-0 left-0 right-0 p-2 bg-black bg-opacity-50 text-white text-center">
+                {scanningStatus}
+              </div>
+              <div className="absolute inset-0 border-2 border-white opacity-50 m-12"></div>
+            </div>
+            <div className="mt-4 flex justify-center">
+              <button
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  closeCamera();
+                }}
+                className="px-6 py-2 bg-red-600 text-white rounded hover:bg-red-700 transition-colors"
+              >
+                Cancel Scanning
+              </button>
+            </div>
           </div>
         </div>
       )}

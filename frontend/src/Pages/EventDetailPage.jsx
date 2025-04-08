@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useParams, Link } from "react-router-dom";
 import axios from "axios";
+import { useUser } from "@clerk/clerk-react";
 
 const EventDetailPage = () => {
   const { id } = useParams();
@@ -9,28 +10,19 @@ const EventDetailPage = () => {
   const [error, setError] = useState("");
   const [registering, setRegistering] = useState(false);
   const [registered, setRegistered] = useState(false);
-  const [user, setUser] = useState(null);
   const [qrCode, setQrCode] = useState(null);
   const [showQrModal, setShowQrModal] = useState(false);
 
-  useEffect(() => {
-    const getCurrentUser = () => {
-      const currentUser = {
-        _id: "65fd123456789abcdef54321",
-        name: "John Doe"
-      };
-      setUser(currentUser);
-      return currentUser;
-    };
+  const { user, isSignedIn } = useUser();
 
+  useEffect(() => {
     const fetchEventDetails = async () => {
       try {
         setLoading(true);
         const response = await axios.get(`https://evento-kv9i.onrender.com/api/events/${id}`);
         setEvent(response.data);
 
-        const currentUser = getCurrentUser();
-        if (response.data.participants.includes(currentUser._id)) {
+        if (user && response.data.participants.includes(user.id)) {
           setRegistered(true);
         }
 
@@ -43,42 +35,76 @@ const EventDetailPage = () => {
       }
     };
 
-    fetchEventDetails();
-  }, [id]);
+    if (isSignedIn) {
+      fetchEventDetails();
+    }
+  }, [id, isSignedIn, user]);
 
   const handleRegister = async () => {
-    if (!user) {
+    if (!isSignedIn || !user) {
       alert("Please log in to register for events");
       return;
     }
-
+  
     setRegistering(true);
-
+  
     try {
-      const response = await axios.post(`https://evento-kv9i.onrender.com/api/events/${id}/register`, {
-        userId: user._id,
-        userName: user.name,
-        eventId: id,
-        eventTitle: event.title
+      // Log complete user object (without sensitive data) for debugging
+      console.log("Clerk user object:", {
+        id: user.id,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        email: user.primaryEmailAddress?.emailAddress
       });
-
-      setEvent(response.data.event);
-      setRegistered(true);
-      setQrCode(response.data.qrCodeUrl);
-      setShowQrModal(true);
-      alert("Registration successful!");
-    } catch (error) {
-      console.error("Registration error:", error);
-      let errorMessage = "Registration failed. Please try again.";
-      if (error.response?.data?.message) {
-        errorMessage = error.response.data.message;
+  
+      // Simplified payload - sometimes less is more
+      const registrationData = {
+        userId: user.id,
+        userName: user.fullName || `${user.firstName || ''} ${user.lastName || ''}`.trim(),
+        eventId: id
+      };
+  
+      console.log("Sending registration data:", registrationData);
+  
+      const response = await axios.post(
+        `https://evento-kv9i.onrender.com/api/events/${id}/register`, 
+        registrationData
+      );
+  
+      console.log("Registration response:", response.data);
+  
+      if (response.data) {
+        setEvent(response.data.event);
+        setRegistered(true);
+        if (response.data.qrCodeUrl) {
+          setQrCode(response.data.qrCodeUrl);
+          setShowQrModal(true);
+        }
+        alert("Registration successful!");
       }
+    } catch (error) {
+      console.error("Registration error details:", error.response?.data || error.message);
+      console.error("Error status:", error.response?.status);
+      console.error("Error headers:", error.response?.headers);
+      
+      let errorMessage = "Registration failed. Please try again.";
+      
+      if (error.response) {
+        if (error.response.data?.message) {
+          errorMessage = error.response.data.message;
+        } else if (error.response.status === 500) {
+          errorMessage = "Server error. The registration service is currently experiencing issues.";
+        }
+      } else if (error.request) {
+        errorMessage = "No response received from server. Please try again later.";
+      }
+      
       alert(errorMessage);
     } finally {
       setRegistering(false);
     }
   };
-
+  
   const handleCancelRegistration = async () => {
     if (!user) {
       alert("Please log in to cancel your registration");
@@ -87,7 +113,7 @@ const EventDetailPage = () => {
 
     try {
       await axios.post(`https://evento-kv9i.onrender.com/api/events/${id}/cancel`, {
-        userId: user._id
+        userId: user.id
       });
 
       setRegistered(false);

@@ -1,1 +1,25 @@
 @import "tailwindcss";
+
+@keyframes glow {
+    0% {
+      filter: 
+        brightness(150%) 
+        drop-shadow(0 0 5px #ffffff) 
+        drop-shadow(0 0 25px #ffffff) 
+        drop-shadow(0 0 50px #1f80e0) 
+        drop-shadow(0 0 100px #1f80e0);
+    }
+    100% {
+      filter: 
+        brightness(200%) 
+        drop-shadow(0 0 10px #ffffff) 
+        drop-shadow(0 0 35px #ffffff) 
+        drop-shadow(0 0 70px #1f80e0) 
+        drop-shadow(0 0 140px #1f80e0);
+    }
+  }
+  
+  .glowing-icon {
+    animation: glow 1.5s infinite alternate;
+    z-index: 9999;
+  }

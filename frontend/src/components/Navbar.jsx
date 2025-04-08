@@ -1,8 +1,10 @@
 import { Link, useNavigate } from "react-router-dom";
+import { useAuth, UserButton, SignInButton } from "@clerk/clerk-react";
 import logo from "../assets/logo.png";
 
 const Navbar = () => {
   const navigate = useNavigate();
+  const { isSignedIn, user } = useAuth();
   
   return (
     <nav className="bg-gray-900 text-white px-6 py-4 flex justify-between items-center">
@@ -12,11 +14,28 @@ const Navbar = () => {
         <h1 className="text-xl font-bold">Evento</h1>
       </div>
       
-      {/* Center - Menu Links */}
-      <ul className="flex gap-6 text-lg">
-        <li><Link to="/contactus" className="hover:text-gray-400">Contact Us</Link></li>
-      </ul>
-    
+      {/* Right Side - Auth Buttons */}
+      <div className="flex items-center gap-4">
+        {isSignedIn ? (
+          <>
+            <Link to="/home" className="hover:text-blue-400 transition-colors">
+              Home
+            </Link>
+            {user?.publicMetadata?.role === "admin" && (
+              <Link to="/admin" className="hover:text-blue-400 transition-colors">
+                Admin
+              </Link>
+            )}
+            <UserButton afterSignOutUrl="/" />
+          </>
+        ) : (
+          <SignInButton mode="modal">
+            <button className="bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded-lg transition-colors">
+              Sign In
+            </button>
+          </SignInButton>
+        )}
+      </div>
     </nav>
   );
 };
