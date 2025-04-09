@@ -135,6 +135,9 @@ const registerForEvent = async (req, res) => {
   try {
     const { userId, userName, eventId, eventTitle } = req.body;
     
+    // Log received data
+    console.log("Registration request received:", { userId, userName, eventId, eventTitle });
+    
     // Find and update event with new participant
     const event = await Event.findByIdAndUpdate(
       eventId,
@@ -146,7 +149,14 @@ const registerForEvent = async (req, res) => {
       return res.status(404).json({ message: "Event not found" });
     }
 
-    // Generate QR code with user and event details
+    // TEMPORARILY skip QR code generation to test if that's the issue
+    res.json({
+      event,
+      qrCodeUrl: "https://placeholder.com/qr-code-placeholder",
+      message: "Registration successful (QR code generation skipped for testing)"
+    });
+    
+    /* Comment out the QR code part for testing
     const qrData = {
       userId,
       userName,
@@ -161,11 +171,18 @@ const registerForEvent = async (req, res) => {
       event,
       qrCodeUrl
     });
+    */
+    
   } catch (error) {
     console.error('Registration error:', error);
-    res.status(500).json({ message: "Registration failed" });
+    // Include the actual error message to help with debugging
+    res.status(500).json({ 
+      message: "Registration failed", 
+      error: error.message,
+      stack: process.env.NODE_ENV === 'development' ? error.stack : undefined 
+    });
   }
-}; 
+};
   
   // Cancel Registration (optional but useful)
   const cancelRegistration = async (req, res) => {

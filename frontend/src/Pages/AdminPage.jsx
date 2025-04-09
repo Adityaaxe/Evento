@@ -148,26 +148,26 @@ const AdminPage = () => {
 
     const scanFrame = () => {
       if (!scanning || !cameraActive) return;
-
+    
       try {
         // Set canvas dimensions to match video
         canvas.width = videoElement.videoWidth;
         canvas.height = videoElement.videoHeight;
-
+    
         // Draw video frame to canvas
         ctx.drawImage(videoElement, 0, 0, canvas.width, canvas.height);
-
+    
         // Get image data for jsQR
         const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
         const code = jsQR(imageData.data, imageData.width, imageData.height, {
           inversionAttempts: "dontInvert",
         });
-
+    
         if (code) {
           console.log("QR Code detected:", code.data);
           setQrResult(code.data);
-          scanning = false; // Stop scanning
-
+          scanning = false;
+    
           try {
             const parsedData = JSON.parse(code.data);
             setParsedQrData(parsedData);
@@ -176,16 +176,19 @@ const AdminPage = () => {
             setValidationStatus("error");
             setValidationMessage("Invalid QR format");
           }
-
+    
           closeCamera();
           return;
         }
-
+    
         // Continue scanning
         requestAnimationFrame(scanFrame);
+      } catch (error) {
+        console.error("Error during scanFrame:", error);
+        setScanningStatus("Error scanning QR code");
       }
     };
-    // Start the scan loop
+
     scanFrame();
   };
 

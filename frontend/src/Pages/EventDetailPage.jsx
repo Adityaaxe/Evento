@@ -49,19 +49,18 @@ const EventDetailPage = () => {
     setRegistering(true);
   
     try {
-      // Log complete user object (without sensitive data) for debugging
-      console.log("Clerk user object:", {
-        id: user.id,
-        firstName: user.firstName,
-        lastName: user.lastName,
-        email: user.primaryEmailAddress?.emailAddress
-      });
+      // Make sure we have the event data
+      if (!event || !event.title) {
+        alert("Event information is missing. Please refresh the page and try again.");
+        setRegistering(false);
+        return;
+      }
   
-      // Simplified payload - sometimes less is more
       const registrationData = {
         userId: user.id,
         userName: user.fullName || `${user.firstName || ''} ${user.lastName || ''}`.trim(),
-        eventId: id
+        eventId: id,
+        eventTitle: event.title  // Adding the eventTitle field here
       };
   
       console.log("Sending registration data:", registrationData);
@@ -85,18 +84,13 @@ const EventDetailPage = () => {
     } catch (error) {
       console.error("Registration error details:", error.response?.data || error.message);
       console.error("Error status:", error.response?.status);
-      console.error("Error headers:", error.response?.headers);
       
       let errorMessage = "Registration failed. Please try again.";
       
       if (error.response) {
         if (error.response.data?.message) {
           errorMessage = error.response.data.message;
-        } else if (error.response.status === 500) {
-          errorMessage = "Server error. The registration service is currently experiencing issues.";
         }
-      } else if (error.request) {
-        errorMessage = "No response received from server. Please try again later.";
       }
       
       alert(errorMessage);
@@ -104,7 +98,7 @@ const EventDetailPage = () => {
       setRegistering(false);
     }
   };
-  
+
   const handleCancelRegistration = async () => {
     if (!user) {
       alert("Please log in to cancel your registration");
