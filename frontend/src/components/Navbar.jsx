@@ -11,7 +11,7 @@ const Navbar = () => {
       {/* Left Side - Logo */}
       <div className="flex items-center gap-1 cursor-pointer" onClick={() => navigate("/")}>
         <img src={logo} alt="Logo" className="w-10 h-10" />
-        <h1 className="text-xl font-bold">Evento</h1>
+        <h1 className="text-xl font-bold">Carnival</h1>
       </div>
       
       {/* Right Side - Auth Buttons */}
