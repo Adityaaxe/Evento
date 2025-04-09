@@ -57,11 +57,6 @@ const createEvent = async (req, res) => {
       });
     }
     
-    // Validate organizerID
-    if (!mongoose.Types.ObjectId.isValid(organizerID)) {
-      return res.status(400).json({ message: "Invalid organizerID format" });
-    }
-    
     // Prepare event data
     const eventData = { 
       title, 
