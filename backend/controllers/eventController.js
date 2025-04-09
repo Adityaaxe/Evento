@@ -148,15 +148,7 @@ const registerForEvent = async (req, res) => {
     if (!event) {
       return res.status(404).json({ message: "Event not found" });
     }
-
-    // TEMPORARILY skip QR code generation to test if that's the issue
-    res.json({
-      event,
-      qrCodeUrl: "https://placeholder.com/qr-code-placeholder",
-      message: "Registration successful (QR code generation skipped for testing)"
-    });
     
-    /* Comment out the QR code part for testing */
     const qrData = {
       userId,
       userName,
