@@ -57,6 +57,11 @@ const createEvent = async (req, res) => {
       });
     }
     
+    // Validate organizerID
+    if (!organizerID || typeof organizerID !== "string") {
+      return res.status(400).json({ message: "Organizer ID is required and must be a string." });
+    }
+    
     // Prepare event data
     const eventData = { 
       title, 
