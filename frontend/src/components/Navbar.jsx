@@ -18,8 +18,8 @@ const Navbar = () => {
       <div className="flex items-center gap-4">
         {isSignedIn ? (
           <>
-            <Link to="/home" className="hover:text-blue-400 transition-colors">
-              Home
+            <Link to="/admin" className="hover:text-blue-400 transition-colors">
+              Admin
             </Link>
             {user?.publicMetadata?.role === "admin" && (
               <Link to="/admin" className="hover:text-blue-400 transition-colors">
