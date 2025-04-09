@@ -26,10 +26,10 @@ export default function LandingPage() {
 
   return (
     <PageSetup>
-      <div className="flex justify-center items-center h-screen bg-gradient-to-br from-purple-900 via-fuchsia-800 to-pink-700">
+      <div className="flex justify-center items-center h-screen p-3 bg-gradient-to-br from-purple-900 via-fuchsia-800 to-pink-700">
         <div className="bg-white/10 backdrop-blur-2xl p-10 rounded-3xl text-center shadow-2xl max-w-xl border border-white/20">
           <h1 className="text-5xl font-extrabold text-white drop-shadow mb-4">
-            SAGI Carnival
+            Carnival
           </h1>
           <p className="text-lg text-gray-300 mb-6">
             Dive into the celebration of culture, tech, and creativity.
