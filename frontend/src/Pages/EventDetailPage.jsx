@@ -41,63 +41,63 @@ const EventDetailPage = () => {
   }, [id, isSignedIn, user]);
 
   const handleRegister = async () => {
-    if (!isSignedIn || !user) {
-      alert("Please log in to register for events");
+  if (!isSignedIn || !user) {
+    alert("Please log in to register for events");
+    return;
+  }
+
+  setRegistering(true);
+
+  try {
+    // Make sure we have the event data
+    if (!event || !event.title) {
+      alert("Event information is missing. Please refresh the page and try again.");
+      setRegistering(false);
       return;
     }
-  
-    setRegistering(true);
-  
-    try {
-      // Make sure we have the event data
-      if (!event || !event.title) {
-        alert("Event information is missing. Please refresh the page and try again.");
-        setRegistering(false);
-        return;
+
+    const registrationData = {
+      userId: user.id,
+      userName: user.fullName || `${user.firstName || ''} ${user.lastName || ''}`.trim(),
+      eventId: id,
+      eventTitle: event.title  // Adding the eventTitle field here
+    };
+
+    console.log("Sending registration data:", registrationData);
+
+    const response = await axios.post(
+      `https://evento-kv9i.onrender.com/api/events/${id}/register`, 
+      registrationData
+    );
+
+    console.log("Registration response:", response.data);
+
+    if (response.data) {
+      setEvent(response.data.event);
+      setRegistered(true);
+      if (response.data.qrCodeUrl) {
+        setQrCode(response.data.qrCodeUrl);
+        setShowQrModal(true);
       }
-  
-      const registrationData = {
-        userId: user.id,
-        userName: user.fullName || `${user.firstName || ''} ${user.lastName || ''}`.trim(),
-        eventId: id,
-        eventTitle: event.title  // Adding the eventTitle field here
-      };
-  
-      console.log("Sending registration data:", registrationData);
-  
-      const response = await axios.post(
-        `https://evento-kv9i.onrender.com/api/events/${id}/register`, 
-        registrationData
-      );
-  
-      console.log("Registration response:", response.data);
-  
-      if (response.data) {
-        setEvent(response.data.event);
-        setRegistered(true);
-        if (response.data.qrCodeUrl) {
-          setQrCode(response.data.qrCodeUrl);
-          setShowQrModal(true);
-        }
-        alert("Registration successful!");
-      }
-    } catch (error) {
-      console.error("Registration error details:", error.response?.data || error.message);
-      console.error("Error status:", error.response?.status);
-      
-      let errorMessage = "Registration failed. Please try again.";
-      
-      if (error.response) {
-        if (error.response.data?.message) {
-          errorMessage = error.response.data.message;
-        }
-      }
-      
-      alert(errorMessage);
-    } finally {
-      setRegistering(false);
+      alert("Registration successful!");
     }
-  };
+  } catch (error) {
+    console.error("Registration error details:", error.response?.data || error.message);
+    console.error("Error status:", error.response?.status);
+    
+    let errorMessage = "Registration failed. Please try again.";
+    
+    if (error.response) {
+      if (error.response.data?.message) {
+        errorMessage = error.response.data.message;
+      }
+    }
+    
+    alert(errorMessage);
+  } finally {
+    setRegistering(false);
+  }
+};
 
   const handleCancelRegistration = async () => {
     if (!user) {

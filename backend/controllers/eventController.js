@@ -156,7 +156,7 @@ const registerForEvent = async (req, res) => {
       message: "Registration successful (QR code generation skipped for testing)"
     });
     
-    /* Comment out the QR code part for testing
+    /* Comment out the QR code part for testing */
     const qrData = {
       userId,
       userName,
@@ -171,7 +171,7 @@ const registerForEvent = async (req, res) => {
       event,
       qrCodeUrl
     });
-    */
+   
     
   } catch (error) {
     console.error('Registration error:', error);
