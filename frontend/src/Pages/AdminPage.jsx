@@ -2,11 +2,12 @@ import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { FaCheckCircle, FaPlus, FaTimesCircle } from "react-icons/fa";
 import jsQR from "jsqr";
+import { useUser } from "@clerk/clerk-react";
 
 const AdminPage = () => {
-  const organizerID = "65fd123456789abcdef12345";
-  const [showEventForm, setShowEventForm] = useState(false);
+  const { user, isLoaded } = useUser(); // 👈 Get the user object
 
+  const [showEventForm, setShowEventForm] = useState(false);
   const [eventData, setEventData] = useState({
     title: "",
     description: "",
@@ -15,8 +16,17 @@ const AdminPage = () => {
     location: "",
     poster: null,
     registrationDeadline: "",
-    organizerID: organizerID
+    organizerID: "", // initially empty, to be set later
   });
+
+  useEffect(() => {
+    if (isLoaded && user) {
+      setEventData((prev) => ({
+        ...prev,
+        organizerID: user.id, // 👈 Set the Clerk user ID as organizerID
+      }));
+    }
+  }, [isLoaded, user]);
 
   const [events, setEvents] = useState([]);
   const [error, setError] = useState("");
