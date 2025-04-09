@@ -1,11 +1,11 @@
-
 import React, { useState, useEffect } from "react";
 import axios from "axios";
-import { FaCheckCircle } from "react-icons/fa";
+import { FaCheckCircle, FaPlus, FaTimesCircle } from "react-icons/fa";
 import jsQR from "jsqr";
 
 const AdminPage = () => {
   const organizerID = "65fd123456789abcdef12345";
+  const [showEventForm, setShowEventForm] = useState(false);
 
   const [eventData, setEventData] = useState({
     title: "",
@@ -87,6 +87,8 @@ const AdminPage = () => {
         registrationDeadline: "",
         organizerID: organizerID
       });
+      // Hide form after successful submission
+      setShowEventForm(false);
     } catch (error) {
       if (error.response) {
         const errorMessage = error.response.data.message ||
@@ -107,9 +109,11 @@ const AdminPage = () => {
       setCameraActive(true);
       setScanningStatus('Accessing camera...');
 
-      const stream = await navigator.mediaDevices.getUserMedia({
+      const mediaStream = await navigator.mediaDevices.getUserMedia({
         video: { facingMode: "environment" }
       });
+      
+      setStream(mediaStream);
 
       const videoElement = document.getElementById("camera-feed");
       videoElement.srcObject = mediaStream;
@@ -117,6 +121,7 @@ const AdminPage = () => {
       // Start scanning only after video is playing
       videoElement.onplaying = () => {
         console.log("Video is playing - starting scan");
+        setScanning(true);
         scanQRCode();
       };
 
@@ -137,14 +142,13 @@ const AdminPage = () => {
       stream.getTracks().forEach((track) => track.stop());
     }
     setCameraActive(false);
+    setScanning(false);
   };
 
   const scanQRCode = () => {
     const videoElement = document.getElementById("camera-feed");
     const canvas = document.createElement("canvas");
     const ctx = canvas.getContext("2d", { willReadFrequently: true });
-
-    let isScanning = true;
 
     const scanFrame = () => {
       if (!scanning || !cameraActive) return;
@@ -166,7 +170,7 @@ const AdminPage = () => {
         if (code) {
           console.log("QR Code detected:", code.data);
           setQrResult(code.data);
-          scanning = false;
+          setScanning(false);
     
           try {
             const parsedData = JSON.parse(code.data);
@@ -230,95 +234,21 @@ const AdminPage = () => {
     }
   }, [cameraActive, stream]);
 
+  const toggleEventForm = () => {
+    setShowEventForm(!showEventForm);
+  };
+
   return (
-    <div className="flex h-screen bg-gradient-to-b from-gray-900 to-black p-4">
-      {/* Left Side: Event Form */}
-      <div className="w-1/3 p-4 bg-gray-200 rounded-lg shadow-md">
-        <h2 className="text-xl font-bold mb-4">Host an Event</h2>
-
-        {error && (
-          <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
-            {error}
-          </div>
-        )}
-
-        <form onSubmit={handleSubmit} className="space-y-3">
-          <input
-            type="text"
-            name="title"
-            value={eventData.title}
-            onChange={handleChange}
-            placeholder="Event Title"
-            className="w-full p-2 border rounded"
-            required
-          />
-          <textarea
-            name="description"
-            value={eventData.description}
-            onChange={handleChange}
-            placeholder="Event Description"
-            className="w-full p-2 border rounded"
-            required
-          />
-          <input
-            type="date"
-            name="date"
-            value={eventData.date}
-            onChange={handleChange}
-            className="w-full p-2 border rounded"
-            required
-          />
-          <input
-            type="time"
-            name="time"
-            value={eventData.time}
-            onChange={handleChange}
-            className="w-full p-2 border rounded"
-            required
-          />
-          <input
-            type="text"
-            name="location"
-            value={eventData.location}
-            onChange={handleChange}
-            placeholder="Event Location"
-            className="w-full p-2 border rounded"
-            required
-          />
-          <input
-            type="date"
-            name="registrationDeadline"
-            value={eventData.registrationDeadline}
-            onChange={handleChange}
-            placeholder="Registration Deadline"
-            className="w-full p-2 border rounded"
-            required
-          />
-          <div className="mb-3">
-            <label className="block mb-2 text-sm font-bold">Event Poster</label>
-            <input
-              type="file"
-              name="poster"
-              onChange={handleChange}
-              accept="image/*"
-              className="w-full p-2 border rounded"
-            />
-          </div>
-          <button type="submit" className="w-full p-2 bg-blue-600 text-white rounded">
-            Create Event
-          </button>
-        </form>
-      </div>
-
-      {/* Right Side: Event List */}
-      <div className="w-2/3 p-4 overflow-y-auto">
+    <div className="h-screen bg-gradient-to-b from-gray-900 to-black p-4 relative">
+      {/* Main Content Area - Event List */}
+      <div className="w-full">
         <h2 className="text-xl font-bold text-white mb-4">Your Hosted Events</h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-6">
           {events.length > 0 ? (
             events.map((event) => (
               <div
                 key={event._id}
-                className="bg-white rounded-lg shadow-md p-4 h-full flex flex-col"
+                className="bg-white rounded-lg shadow-md p-2 h-full flex flex-col"
               >
                 {event.poster && (
                   <img
@@ -346,10 +276,109 @@ const AdminPage = () => {
               </div>
             ))
           ) : (
-            <p>No events found. Create your first event!</p>
+            <p className="text-white">No events found. Create your first event!</p>
           )}
         </div>
       </div>
+
+      {/* Floating Action Button (FAB) */}
+      <button 
+        onClick={toggleEventForm} 
+        className="fixed bottom-6 right-6 w-16 h-16 rounded-full bg-blue-600 text-white flex items-center justify-center shadow-lg hover:bg-blue-700 transition-colors z-20"
+      >
+        <FaPlus className="text-2xl" />
+      </button>
+      
+      {/* Event Form Popup */}
+      {showEventForm && (
+        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-30">
+          <div className="bg-gray-200 rounded-lg shadow-md p-6 w-full max-w-lg mx-4">
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-xl font-bold">Host an Event</h2>
+              <button 
+                onClick={toggleEventForm}
+                className="text-gray-500 hover:text-gray-700"
+              >
+                <FaTimesCircle className="text-xl" />
+              </button>
+            </div>
+
+            {error && (
+              <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
+                {error}
+              </div>
+            )}
+
+            <form onSubmit={handleSubmit} className="space-y-3">
+              <input
+                type="text"
+                name="title"
+                value={eventData.title}
+                onChange={handleChange}
+                placeholder="Event Title"
+                className="w-full p-2 border rounded"
+                required
+              />
+              <textarea
+                name="description"
+                value={eventData.description}
+                onChange={handleChange}
+                placeholder="Event Description"
+                className="w-full p-2 border rounded"
+                required
+              />
+              <input
+                type="date"
+                name="date"
+                value={eventData.date}
+                onChange={handleChange}
+                className="w-full p-2 border rounded"
+                required
+              />
+              <input
+                type="time"
+                name="time"
+                value={eventData.time}
+                onChange={handleChange}
+                className="w-full p-2 border rounded"
+                required
+              />
+              <input
+                type="text"
+                name="location"
+                value={eventData.location}
+                onChange={handleChange}
+                placeholder="Event Location"
+                className="w-full p-2 border rounded"
+                required
+              />
+              <input
+                type="date"
+                name="registrationDeadline"
+                value={eventData.registrationDeadline}
+                onChange={handleChange}
+                placeholder="Registration Deadline"
+                className="w-full p-2 border rounded"
+                required
+              />
+              <div className="mb-3">
+                <label className="block mb-2 text-sm font-bold">Event Poster</label>
+                <input
+                  type="file"
+                  name="poster"
+                  onChange={handleChange}
+                  accept="image/*"
+                  className="w-full p-2 border rounded"
+                />
+              </div>
+              <button type="submit" className="w-full p-2 bg-blue-600 text-white rounded hover:bg-blue-700">
+                Create Event
+              </button>
+            </form>
+          </div>
+        </div>
+      )}
+      
       {/* Verification Popup */}
       {showVerificationPopup && (
         <div className="fixed inset-0 flex items-center justify-center z-50">
@@ -368,7 +397,7 @@ const AdminPage = () => {
 
       {/* Camera Modal */}
       {cameraActive && (
-        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-75">
+        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-75 z-50">
           <div className="bg-white p-4 rounded-lg relative">
             {/* Add a border to help with scanning */}
             <div className="absolute inset-0 border-4 border-green-500 m-8 pointer-events-none"></div>
@@ -394,7 +423,7 @@ const AdminPage = () => {
       )}
 
       {qrResult && (
-        <div className="fixed bottom-4 right-4 p-4 bg-white rounded-lg shadow-lg max-w-md">
+        <div className="fixed bottom-4 right-4 p-4 bg-white rounded-lg shadow-lg max-w-md z-40">
           <h3 className="text-lg font-bold mb-2">Scanned Ticket</h3>
 
           {parsedQrData && (
