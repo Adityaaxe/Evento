@@ -1,4 +1,5 @@
 require("dotenv").config();
+const path = require('path');
 const express = require("express");
 const mongoose = require("mongoose");
 const cors = require("cors");
@@ -23,6 +24,7 @@ const corsOptions = {
 app.use(cors(corsOptions));
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 // Import routes
 const eventoRoutes = require("./routes/eventoRoutes");

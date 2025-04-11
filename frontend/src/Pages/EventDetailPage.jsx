@@ -135,7 +135,7 @@ const EventDetailPage = () => {
         <div className="relative h-64">
           {event?.poster && (
             <img
-              src={`${event.poster}`}
+              src={`https://evento-kv9i.onrender.com/${event.poster}`}
               alt={event.title}
               className="w-full h-full object-cover"
             />
