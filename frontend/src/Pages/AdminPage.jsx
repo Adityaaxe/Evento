@@ -16,6 +16,7 @@ const AdminPage = () => {
     location: "",
     poster: null,
     registrationDeadline: "",
+    ticketPrice: "",
     organizerID: "", // initially empty, to be set later
   });
 
@@ -95,6 +96,7 @@ const AdminPage = () => {
         location: "",
         poster: null,
         registrationDeadline: "",
+        ticketPrice: "",
         organizerID: organizerID
       });
       // Hide form after successful submission
@@ -368,6 +370,15 @@ const AdminPage = () => {
                 value={eventData.registrationDeadline}
                 onChange={handleChange}
                 placeholder="Registration Deadline"
+                className="w-full p-2 border rounded"
+                required
+              />
+              <input
+                type="number"
+                name="ticketPrice"
+                value={eventData.ticketPrice}
+                onChange={handleChange}
+                placeholder="Ticket Price"
                 className="w-full p-2 border rounded"
                 required
               />

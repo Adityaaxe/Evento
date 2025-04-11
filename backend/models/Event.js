@@ -10,6 +10,10 @@ const eventSchema = new mongoose.Schema({
   participants: [{ type: String , ref: "User" }], // Array of user IDs who registered
   poster: { type: String }, // Path to the poster image
   registrationDeadline: { type: Date, required: true }, // Deadline for event registration
+  ticketPrice: {
+    type: Number,
+    required: true
+  },
   createdAt: { type: Date, default: Date.now }
 });
 

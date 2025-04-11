@@ -154,6 +154,9 @@ const registerForEvent = async (req, res) => {
       userName,
       eventId,
       eventTitle,
+      paymentId,
+      orderId,
+      signature,
       registrationDate: new Date().toISOString()
     };
 

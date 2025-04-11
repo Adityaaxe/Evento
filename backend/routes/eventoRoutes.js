@@ -12,6 +12,7 @@ const {
 const mongoose = require("mongoose");
 const {validateEntry} = require('../controllers/validateQRController');
 const { getUserDetails } = require('../controllers/userController');
+const { createOrder } = require("../controllers/paymentController");
 
 // Middleware to log all requests (for debugging)
 router.use((req, res, next) => {
@@ -42,5 +43,8 @@ router.post("/validate-entry", validateEntry);
 
 // Get user details
 router.get('/users/:id', getUserDetails);
+
+// Create Razorpay order
+router.post("/payment/create-order", createOrder);
 
 module.exports = router;

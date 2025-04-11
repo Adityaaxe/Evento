@@ -2,7 +2,6 @@ import React, { useState, useEffect } from "react";
 import { useParams, Link } from "react-router-dom";
 import axios from "axios";
 import { useUser } from "@clerk/clerk-react";
-import PageSetup from "../components/PageSetup";
 
 const EventDetailPage = () => {
   const { id } = useParams();
@@ -47,49 +46,82 @@ const EventDetailPage = () => {
     }
   }, [id, isSignedIn, user]);
 
+  useEffect(() => {
+    const script = document.createElement("script");
+    script.src = "https://checkout.razorpay.com/v1/checkout.js";
+    script.async = true;
+    document.body.appendChild(script);
+  }, []);
+
   const handleRegister = async () => {
     if (!isSignedIn || !user) {
       alert("Please log in to register for events");
       return;
     }
-
-    setRegistering(true);
-
+  
     try {
-      if (!event || !event.title) {
-        alert("Event information is missing. Please refresh the page and try again.");
-        setRegistering(false);
-        return;
-      }
-
-      const registrationData = {
-        userId: user.id,
-        userName: user.fullName || `${user.firstName || ''} ${user.lastName || ''}`.trim(),
-        eventId: id,
-        eventTitle: event.title
+      // 1. Create payment order
+      const { data } = await axios.post("https://evento-kv9i.onrender.com/api/payment/create-order", {
+        amount: event.ticketPrice,
+      });
+  
+      // 2. Razorpay checkout options
+      const options = {
+        key: "TUahqBCGVgBjH9YMIDcXWPll", // Replace this with your actual Razorpay key
+        amount: data.order.amount,
+        currency: data.order.currency,
+        name: event.title,
+        description: "Event Ticket",
+        order_id: data.order.id,
+        handler: async function (response) {
+          // 3. Payment was successful, register user for the event
+          const registrationData = {
+            userId: user.id,
+            userName: user.fullName || `${user.firstName || ''} ${user.lastName || ''}`.trim(),
+            eventId: event._id || id,
+            eventTitle: event.title,
+            paymentId: response.razorpay_payment_id,
+            orderId: response.razorpay_order_id,
+            signature: response.razorpay_signature,
+          };
+  
+          try {
+            const res = await axios.post(`https://evento-kv9i.onrender.com/api/events/${id}/register`, registrationData);
+  
+            if (res.data) {
+              setEvent(res.data.event);
+              setRegistered(true);
+  
+              if (res.data.qrCodeUrl) {
+                setQrCode(res.data.qrCodeUrl);
+                setShowQrModal(true);
+              }
+  
+              alert("✅ Payment successful & registration complete!");
+            }
+          } catch (regErr) {
+            console.error("Registration error:", regErr);
+            alert("Payment successful, but registration failed. Contact support.");
+          }
+        },
+        prefill: {
+          name: user.fullName,
+          email: user.primaryEmailAddress?.emailAddress || "",
+        },
+        theme: {
+          color: "#7e22ce",
+        },
       };
-
-      const response = await axios.post(
-        `https://evento-kv9i.onrender.com/api/events/${id}/register`,
-        registrationData
-      );
-
-      if (response.data) {
-        setEvent(response.data.event);
-        setRegistered(true);
-        if (response.data.qrCodeUrl) {
-          setQrCode(response.data.qrCodeUrl);
-          setShowQrModal(true);
-        }
-        alert("Registration successful!");
-      }
+  
+      // 4. Open Razorpay modal
+      const razorpay = new window.Razorpay(options);
+      razorpay.open();
     } catch (error) {
-      console.error("Registration error:", error);
-      alert("Registration failed. Please try again.");
-    } finally {
-      setRegistering(false);
+      console.error("Payment error:", error);
+      alert("❌ Payment failed. Please try again.");
     }
   };
+  
 
   const handleCancelRegistration = async () => {
     if (!user) {
@@ -168,6 +200,7 @@ const EventDetailPage = () => {
               <h4 className="text-lg font-bold">{event?.title}</h4>
               <h4 className="text-lg font-bold">Start Time : {event?.time}</h4>
               <h4 className="text-lg font-bold">Venue : {event?.location}</h4>
+              <h4 className="text-lg font-bold">Ticket Price: ₹{event?.ticketPrice}</h4>
               <div className="pt-4">
                 {!registered ? (
                   <button

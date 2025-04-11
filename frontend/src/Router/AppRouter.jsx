@@ -5,7 +5,6 @@ import {
   RedirectToSignIn,
   useUser,
 } from "@clerk/clerk-react";
-
 import LandingPage from "../Pages/LandingPage";
 import AdminPage from "../Pages/AdminPage";
 import HomePage from "../Pages/HomePage";
