@@ -148,8 +148,9 @@ const EventDetailPage = () => {
               <div className="prose max-w-none">
                 <p className="whitespace-pre-line">{event?.description}</p>
               </div>
+              <h4 className="text-lg font-bold mt-4">For any queries contact Organizer</h4>
               {organizer && (
-                <div className="flex items-start space-x-4 mt-6 bg-gray-100 p-4 rounded-lg shadow-sm">
+                <div className="flex items-start space-x-4 mt-2 bg-gray-100 p-4 rounded-lg shadow-lg">
                   <img
                     src={organizer.imageUrl}
                     alt={organizer.name}
@@ -162,7 +163,7 @@ const EventDetailPage = () => {
                 </div>
               )}
             </div>
-            <div className="bg-gray-50 p-6 rounded-lg">
+            <div className="bg-gray-100 p-6 rounded-lg shadow-lg">
               <h3 className="text-lg font-bold mb-4">Event Information</h3>
               <h4 className="text-lg font-bold">{event?.title}</h4>
               <h4 className="text-lg font-bold">Start Time : {event?.time}</h4>
