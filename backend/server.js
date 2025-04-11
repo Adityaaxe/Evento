@@ -51,6 +51,7 @@ app.use((req, res, next) => {
 
 // MongoDB Connection
 mongoose.connect(dbURL, { 
+  dbName: "eventdb", // Force Mongoose to use 'eventdb'
   useNewUrlParser: true, 
   useUnifiedTopology: true 
 })
