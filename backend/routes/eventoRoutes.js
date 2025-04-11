@@ -11,6 +11,7 @@ const {
 } = require('../controllers/eventController');
 const mongoose = require("mongoose");
 const {validateEntry} = require('../controllers/validateQRController');
+const { getUserDetails } = require('../controllers/userController');
 
 // Middleware to log all requests (for debugging)
 router.use((req, res, next) => {
@@ -27,11 +28,19 @@ router.get("/events", getEvents);
 // Get single event by ID
 router.get("/events/:id", getEventById);
 
+// Register for an event
 router.post('/events/:id/register', registerForEvent);
+
+// Cancel registration for an event
 router.post('/events/:id/cancel', cancelRegistration);
 
+// Delete an event
 router.delete("/events/:id", deleteEvent);
 
+// Validate QR code
 router.post("/validate-entry", validateEntry);
+
+// Get user details
+router.get('/users/:id', getUserDetails);
 
 module.exports = router;

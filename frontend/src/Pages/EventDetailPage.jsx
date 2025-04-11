@@ -7,6 +7,7 @@ import PageSetup from "../components/PageSetup";
 const EventDetailPage = () => {
   const { id } = useParams();
   const [event, setEvent] = useState(null);
+  const [organizer, setOrganizer] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [registering, setRegistering] = useState(false);
@@ -27,6 +28,11 @@ const EventDetailPage = () => {
           setRegistered(true);
         }
 
+        if (response.data.organizerID) {
+          const orgRes = await axios.get(`https://evento-kv9i.onrender.com/api/users/${response.data.organizerID}`);
+          setOrganizer(orgRes.data);
+        }
+
         setError("");
       } catch (error) {
         console.error("Error fetching event details:", error);
@@ -42,63 +48,48 @@ const EventDetailPage = () => {
   }, [id, isSignedIn, user]);
 
   const handleRegister = async () => {
-  if (!isSignedIn || !user) {
-    alert("Please log in to register for events");
-    return;
-  }
-
-  setRegistering(true);
-
-  try {
-    // Make sure we have the event data
-    if (!event || !event.title) {
-      alert("Event information is missing. Please refresh the page and try again.");
-      setRegistering(false);
+    if (!isSignedIn || !user) {
+      alert("Please log in to register for events");
       return;
     }
 
-    const registrationData = {
-      userId: user.id,
-      userName: user.fullName || `${user.firstName || ''} ${user.lastName || ''}`.trim(),
-      eventId: id,
-      eventTitle: event.title  // Adding the eventTitle field here
-    };
+    setRegistering(true);
 
-    console.log("Sending registration data:", registrationData);
-
-    const response = await axios.post(
-      `https://evento-kv9i.onrender.com/api/events/${id}/register`, 
-      registrationData
-    );
-
-    console.log("Registration response:", response.data);
-
-    if (response.data) {
-      setEvent(response.data.event);
-      setRegistered(true);
-      if (response.data.qrCodeUrl) {
-        setQrCode(response.data.qrCodeUrl);
-        setShowQrModal(true);
+    try {
+      if (!event || !event.title) {
+        alert("Event information is missing. Please refresh the page and try again.");
+        setRegistering(false);
+        return;
       }
-      alert("Registration successful!");
-    }
-  } catch (error) {
-    console.error("Registration error details:", error.response?.data || error.message);
-    console.error("Error status:", error.response?.status);
-    
-    let errorMessage = "Registration failed. Please try again.";
-    
-    if (error.response) {
-      if (error.response.data?.message) {
-        errorMessage = error.response.data.message;
+
+      const registrationData = {
+        userId: user.id,
+        userName: user.fullName || `${user.firstName || ''} ${user.lastName || ''}`.trim(),
+        eventId: id,
+        eventTitle: event.title
+      };
+
+      const response = await axios.post(
+        `https://evento-kv9i.onrender.com/api/events/${id}/register`,
+        registrationData
+      );
+
+      if (response.data) {
+        setEvent(response.data.event);
+        setRegistered(true);
+        if (response.data.qrCodeUrl) {
+          setQrCode(response.data.qrCodeUrl);
+          setShowQrModal(true);
+        }
+        alert("Registration successful!");
       }
+    } catch (error) {
+      console.error("Registration error:", error);
+      alert("Registration failed. Please try again.");
+    } finally {
+      setRegistering(false);
     }
-    
-    alert(errorMessage);
-  } finally {
-    setRegistering(false);
-  }
-};
+  };
 
   const handleCancelRegistration = async () => {
     if (!user) {
@@ -156,8 +147,20 @@ const EventDetailPage = () => {
               <h2 className="text-2xl font-bold mb-4">Event Details</h2>
               <div className="prose max-w-none">
                 <p className="whitespace-pre-line">{event?.description}</p>
-                <p className="whitespace-pre-line">{event?.organizerID}</p>
               </div>
+              {organizer && (
+                <div className="flex items-start space-x-4 mt-6 bg-gray-100 p-4 rounded-lg shadow-sm">
+                  <img
+                    src={organizer.imageUrl}
+                    alt={organizer.name}
+                    className="w-16 h-16 rounded-full object-cover"
+                  />
+                  <div>
+                    <h4 className="text-lg font-semibold">{organizer.name}</h4>
+                    <p className="text-sm text-gray-600">{organizer.phoneNumber}</p>
+                  </div>
+                </div>
+              )}
             </div>
             <div className="bg-gray-50 p-6 rounded-lg">
               <h3 className="text-lg font-bold mb-4">Event Information</h3>
@@ -195,7 +198,7 @@ const EventDetailPage = () => {
         <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center">
           <div className="bg-white p-6 rounded-lg shadow-lg max-w-sm">
             <h2 className="text-xl font-bold mb-4 text-center">Your QR Code</h2>
-            {qrCode && <img src={qrCode} alt="QR co" className="w-full h-auto" />}
+            {qrCode && <img src={qrCode} alt="QR code" className="w-full h-auto" />}
             <button onClick={downloadQrCode} className="w-full mt-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700">
               Download QR Code
             </button>
