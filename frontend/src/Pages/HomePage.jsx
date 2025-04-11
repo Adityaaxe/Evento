@@ -60,8 +60,7 @@ const HomePage = () => {
   };
 
   return (
-    <PageSetup>
-      <div className="min-h-screen bg-gradient-to-b from-gray-900 p-6">
+      <div className="min-h-screen bg-gradient-to-br from-gray-900 to-black p-6">
         <div className="max-w-6xl mx-auto">
           {/* Header */}
           <header className="mb-8">
@@ -176,7 +175,6 @@ const HomePage = () => {
           </div>
         </div>
       </div>
-    </PageSetup>
   );
 };
 

@@ -1,3 +1,4 @@
+require("dotenv").config();
 const express = require("express");
 const mongoose = require("mongoose");
 const cors = require("cors");
@@ -6,7 +7,7 @@ const bodyParser = require("body-parser");
 const app = express();
 
 // MongoDB Connection URL
-const dbURL = "mongodb+srv://krishanmanics19:a7UAMlWB0tVHwScx@cluster0.rkqs6.mongodb.net/eventdb?retryWrites=true&w=majority&appName=Cluster0";
+const dbURL = process.env.MONGO_URL;
 
 // Comprehensive CORS configuration
 const corsOptions = {
@@ -22,6 +23,7 @@ const corsOptions = {
 app.use(cors(corsOptions));
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 // Import routes
 const eventoRoutes = require("./routes/eventoRoutes");

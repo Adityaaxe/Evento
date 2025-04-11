@@ -7,7 +7,7 @@ const Navbar = () => {
   const { isSignedIn, user } = useAuth();
   
   return (
-    <nav className="bg-gray-900 text-white px-6 py-4 flex justify-between items-center">
+    <nav className="bg-gradient-to-br from-gray-900 to-black text-white px-6 py-4 flex justify-between items-center">
       {/* Left Side - Logo */}
       <div className="flex items-center gap-1 cursor-pointer" onClick={() => navigate("/")}>
         <img src={logo} alt="Logo" className="w-10 h-10" />
