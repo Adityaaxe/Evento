@@ -131,7 +131,6 @@ const EventDetailPage = () => {
   };
 
   return (
-    <PageSetup>
     <div className="min-h-screen bg-gradient-to-br from-purple-900 via-fuchsia-800 to-pink-700 p-6">
       <div className="max-w-4xl mx-auto bg-white rounded-lg shadow-md overflow-hidden">
         <div className="relative h-64">
@@ -157,10 +156,14 @@ const EventDetailPage = () => {
               <h2 className="text-2xl font-bold mb-4">Event Details</h2>
               <div className="prose max-w-none">
                 <p className="whitespace-pre-line">{event?.description}</p>
+                <p className="whitespace-pre-line">{event?.organizerID}</p>
               </div>
             </div>
             <div className="bg-gray-50 p-6 rounded-lg">
               <h3 className="text-lg font-bold mb-4">Event Information</h3>
+              <h4 className="text-lg font-bold">{event?.title}</h4>
+              <h4 className="text-lg font-bold">Start Time : {event?.time}</h4>
+              <h4 className="text-lg font-bold">Venue : {event?.location}</h4>
               <div className="pt-4">
                 {!registered ? (
                   <button
@@ -206,7 +209,6 @@ const EventDetailPage = () => {
         </div>
       )}
     </div>
-    </PageSetup>
   );
 };
 
