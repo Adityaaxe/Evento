@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useParams, Link } from "react-router-dom";
 import axios from "axios";
 import { useUser } from "@clerk/clerk-react";
+import PageSetup from "../components/PageSetup";
 
 const EventDetailPage = () => {
   const { id } = useParams();
@@ -130,7 +131,8 @@ const EventDetailPage = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-gray-900 p-6">
+    <PageSetup>
+    <div className="min-h-screen bg-gradient-to-br from-purple-900 via-fuchsia-800 to-pink-700 p-6">
       <div className="max-w-4xl mx-auto bg-white rounded-lg shadow-md overflow-hidden">
         <div className="relative h-64">
           {event?.poster && (
@@ -204,6 +206,7 @@ const EventDetailPage = () => {
         </div>
       )}
     </div>
+    </PageSetup>
   );
 };
 
