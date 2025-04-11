@@ -32,6 +32,7 @@ const createEvent = async (req, res) => {
       time, 
       location, 
       organizerID,
+      ticketPrice,
       registrationDeadline 
     } = req.body;
     
@@ -43,6 +44,7 @@ const createEvent = async (req, res) => {
       { field: time, name: 'time' },
       { field: location, name: 'location' },
       { field: organizerID, name: 'organizerID' },
+      { field: ticketPrice, name: 'ticketPrice' },
       { field: registrationDeadline, name: 'registrationDeadline' }
     ];
 
@@ -70,6 +72,7 @@ const createEvent = async (req, res) => {
       time, 
       location, 
       organizerID,
+      ticketPrice,
       registrationDeadline,
       participants: [] 
     };
